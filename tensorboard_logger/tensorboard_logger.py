@@ -61,7 +61,7 @@ class Logger(object):
         return logger
 
 
-_default_logger = None
+_default_logger = None  # type: Logger
 
 
 def configure(logdir, flush_secs=2):
@@ -80,6 +80,6 @@ def log_value(name, value, step):
             'default logger is not configured. '
             'Call tensorboard_logger.configure(logdir), '
             'or use tensorboard_logger.Logger')
-    _default_logger.log(name, value, step)
+    _default_logger.log_value(name, value, step)
 
 log_value.__doc__ = Logger.log_value.__doc__
