@@ -13,7 +13,7 @@ Log TensorBoard events without touching TensorFlow
 --------------------------------------------------
 
 `TensorBoard <https://www.tensorflow.org/how_tos/summaries_and_tensorboard/>`_
-is a visualization tool (and a part of
+is a visualization tool (not this project, it's a part of
 `TensorFlow <https://www.tensorflow.org>`_ framework)
 that makes it easy to check training progress, compare between
 different runs, and has lots of other cool features.
@@ -24,7 +24,7 @@ different runs, and has lots of other cool features.
 
     from tensorboard_logger import configure, log_value
 
-    configure("run-1234")
+    configure("runs/run-1234")
 
     for step in range(1000):
         v1, v2 = do_stuff()
@@ -72,13 +72,22 @@ A simple usage example::
 
     from tensorboard_logger import configure, log_value
 
-    configure("run-1234", flush_secs=5)
+    configure("runs/run-1234", flush_secs=5)
 
     for step in range(1000):
         v1, v2 = do_stuff()
         log_value('v1', v1, step)
         log_value('v2', v2, step)
 
+
+You can start TensorBoard right away::
+
+    tensorboard --logdir runs
+
+And go check the metrics to TensorBoard UI at http://localhost:6006
+(note that it binds to 0.0.0.0 by default).
+Metrics are refreshed on switch to browser tab, and there is also a refresh button
+at the top right.
 
 API
 ---
