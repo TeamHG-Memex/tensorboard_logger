@@ -9,6 +9,10 @@ import tensorflow as tf
 __all__ = ['Logger', 'configure', 'log_value']
 
 
+_VALID_OP_NAME_START = re.compile('^[A-Za-z0-9.]')
+_VALID_OP_NAME_PART = re.compile('[A-Za-z0-9_.\\-/]+')
+
+
 class Logger(object):
     def __init__(self, logdir, flush_secs=2, is_dummy=False):
         self._session = tf.Session()
@@ -42,8 +46,7 @@ class Logger(object):
                             .format(type(step)))
 
         # TODO - check that the name is unique
-        # TODO - check which tf identifiers are valid
-        name = '_'.join(re.findall('[\w/]+', name))  # valid tf name
+        name = make_valid_tf_name(name)
         try:
             logger = self._loggers[name]
         except KeyError:
@@ -68,6 +71,13 @@ class Logger(object):
                 self._writer.add_summary(summary, i)
 
         return logger
+
+
+def make_valid_tf_name(name):
+    if not _VALID_OP_NAME_START.match(name):
+        # Must make it valid somehow, but don't want to remove stuff
+        name = '.' + name
+    return '_'.join(_VALID_OP_NAME_PART.findall(name))
 
 
 _default_logger = None  # type: Logger

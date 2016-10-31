@@ -2,6 +2,7 @@
 import time
 
 from tensorboard_logger import Logger, configure, log_value
+from tensorboard_logger.tensorboard_logger import make_valid_tf_name
 
 
 def test_integration_default(tmpdir):
@@ -33,3 +34,12 @@ def test_dummy():
         'A_v/1': [(0, 0), (1, 1), (2, 2)],
         'A_v/2': [(0, 0), (1, 2), (2, 4)],
     }
+
+
+def test_make_valid_tf_name():
+    mvn = make_valid_tf_name
+    assert mvn('This/is/valid') == 'This/is/valid'
+    assert mvn('0-This/is/valid') == '0-This/is/valid'
+    assert mvn('.This/is/valid') == '.This/is/valid'
+    assert mvn(' This/is invalid') == '._This/is_invalid'
+    assert mvn('-This-is-invalid') == '.-This-is-invalid'
