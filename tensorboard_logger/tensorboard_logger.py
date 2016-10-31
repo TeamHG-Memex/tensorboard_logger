@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from collections import defaultdict
 import re
 
 import six
@@ -9,10 +10,14 @@ __all__ = ['Logger', 'configure', 'log_value']
 
 
 class Logger(object):
-    def __init__(self, logdir, flush_secs=2):
+    def __init__(self, logdir, flush_secs=2, is_dummy=False):
         self._session = tf.Session()
-        self._writer = tf.train.SummaryWriter(logdir, flush_secs=flush_secs)
+        if not is_dummy:
+            self._writer = tf.train.SummaryWriter(logdir, flush_secs=flush_secs)
         self._loggers = {}
+        self.is_dummy = is_dummy
+        if is_dummy:
+            self.dummy_log = defaultdict(list)
 
     def log_value(self, name, value, step):
         """ Log new value for given name on given step.
@@ -37,7 +42,8 @@ class Logger(object):
                             .format(type(step)))
 
         # TODO - check that the name is unique
-        name = '_'.join(re.findall('\w+', name))  # valid tf name
+        # TODO - check which tf identifiers are valid
+        name = '_'.join(re.findall('[\w/]+', name))  # valid tf name
         try:
             logger = self._loggers[name]
         except KeyError:
@@ -56,7 +62,10 @@ class Logger(object):
         def logger(x, i):
             _, summary = self._session.run([assign_op, summary_op],
                                            {new_value: x})
-            self._writer.add_summary(summary, i)
+            if self.is_dummy:
+                self.dummy_log[name].append((i, x))
+            else:
+                self._writer.add_summary(summary, i)
 
         return logger
 
