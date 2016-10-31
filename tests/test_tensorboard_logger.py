@@ -43,3 +43,17 @@ def test_make_valid_tf_name():
     assert mvn('.This/is/valid') == '.This/is/valid'
     assert mvn(' This/is invalid') == '._This/is_invalid'
     assert mvn('-This-is-invalid') == '.-This-is-invalid'
+
+
+def test_unique():
+    logger = Logger(None, is_dummy=True)
+    for step in range(1, 3):
+        # names that normalize to the same valid name
+        logger.log_value('A v/1', step, step)
+        logger.log_value('A\tv/1', step * 2, step)
+        logger.log_value('A  v/1', step * 3, step)
+    assert dict(logger.dummy_log) == {
+        'A_v/1':   [(1, 1), (2, 2)],
+        'A_v/1/1': [(1, 2), (2, 4)],
+        'A_v/1/2': [(1, 3), (2, 6)],
+    }

@@ -19,6 +19,7 @@ class Logger(object):
         if not is_dummy:
             self._writer = tf.train.SummaryWriter(logdir, flush_secs=flush_secs)
         self._loggers = {}
+        self._tf_names = set()
         self.is_dummy = is_dummy
         if is_dummy:
             self.dummy_log = defaultdict(list)
@@ -45,20 +46,28 @@ class Logger(object):
             raise TypeError('"step" should be an integer, got {}'
                             .format(type(step)))
 
-        # TODO - check that the name is unique
-        name = make_valid_tf_name(name)
         try:
             logger = self._loggers[name]
         except KeyError:
-            logger = self._loggers[name] = self._make_logger(name, value)
+            tf_name = self._make_tf_name(name)
+            logger = self._loggers[name] = self._make_logger(tf_name, value)
         logger(value, step)
 
-    def _make_logger(self, name, value):
+    def _make_tf_name(self, name):
+        tf_base_name = tf_name = make_valid_tf_name(name)
+        i = 1
+        while tf_name in self._tf_names:
+            tf_name = '{}/{}'.format(tf_base_name, i)
+            i += 1
+        self._tf_names.add(tf_name)
+        return tf_name
+
+    def _make_logger(self, tf_name, value):
         dtype = tf.float32
         variable = tf.Variable(
-            initial_value=value, dtype=dtype, trainable=False, name=name)
-        self._session.run(tf.initialize_variables([variable], name))
-        summary_op = tf.scalar_summary(name, variable)
+            initial_value=value, dtype=dtype, trainable=False, name=tf_name)
+        self._session.run(tf.initialize_variables([variable], tf_name))
+        summary_op = tf.scalar_summary(tf_name, variable)
         new_value = tf.placeholder(dtype, shape=[])
         assign_op = tf.assign(variable, new_value)
 
@@ -66,7 +75,7 @@ class Logger(object):
             _, summary = self._session.run([assign_op, summary_op],
                                            {new_value: x})
             if self.is_dummy:
-                self.dummy_log[name].append((i, x))
+                self.dummy_log[tf_name].append((i, x))
             else:
                 self._writer.add_summary(summary, i)
 
