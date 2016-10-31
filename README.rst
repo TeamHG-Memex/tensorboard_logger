@@ -89,6 +89,11 @@ And go check the metrics to TensorBoard UI at http://localhost:6006
 Metrics are refreshed on switch to browser tab, and there is also a refresh button
 at the top right.
 
+Runtime overhead is large compared to what you would expect from normal logging,
+so you might need to throttle it: a single ``log_value`` call takes about 0.5 ms
+(or 0.0005 s, or 2000 operations/second).
+
+
 API
 ---
 
