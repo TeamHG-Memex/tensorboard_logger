@@ -25,13 +25,8 @@ env:
 - TOXENV=py35
 - TOXENV=py27
 install:
-- pip install -U tox pip wheel
-- pip install numpy
-- if [[ "$TOXENV" == "py27" ]]; then
-    pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.11.0rc2-cp27-none-linux_x86_64.whl;
-  elif [[ "$TOXENV" == "py35" ]]; then
-    pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.11.0rc2-cp35-cp35m-linux_x86_64.whl;
-  fi
+- pip install -U tox
 language: python
 python: 3.5
 script: tox -e ${TOXENV}
+sudo: false
