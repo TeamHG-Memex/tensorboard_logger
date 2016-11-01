@@ -48,6 +48,8 @@ After that, install ``tensorboard_logger`` with pip::
 
     pip install tensorboard_logger
 
+There is a plan to get rid of TensorFlow runtime dependency:
+https://github.com/TeamHG-Memex/tensorboard_logger/issues/1
 
 Usage
 -----
@@ -92,6 +94,7 @@ at the top right.
 Runtime overhead is large compared to what you would expect from normal logging,
 so you might need to throttle it: a single ``log_value`` call takes about 0.5 ms
 (or 0.0005 s, or 2000 operations/second).
+This might get solved in https://github.com/TeamHG-Memex/tensorboard_logger/issues/1.
 
 
 API

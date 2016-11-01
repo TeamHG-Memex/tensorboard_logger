@@ -21,7 +21,7 @@ test_requirements = [
 
 setup(
     name='tensorboard_logger',
-    version='0.1.0',
+    version='0.0.1',
     description='Log TensorBoard events without touching Tensorflow',
     long_description=readme + '\n\n' + history,
     author='Konstantin Lopuhin',
