@@ -125,6 +125,15 @@ and it has a single ``log_value`` method with the same signature as
 ``tensorboard_logger.log_value``.
 
 
+Development
+-----------
+
+Compiling python protobuf files::
+
+    protoc --python_out . tensorboard_logger/tf_protobuf/summary.proto
+    protoc --python_out . tensorboard_logger/tf_protobuf/event.proto
+
+
 License
 -------
 
