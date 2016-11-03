@@ -4,10 +4,10 @@ import os
 import re
 import struct
 import time
-import zlib
 
 import six
 from .tf_protobuf import summary_pb2, event_pb2
+from .crc32c import crc32c
 
 
 __all__ = ['Logger', 'configure', 'log_value']
@@ -93,9 +93,9 @@ class Logger(object):
         w = self._writer.write
         header = struct.pack('Q', len(data))
         w(header)
-        w(struct.pack('I', masked_crc32(header)))
+        w(struct.pack('I', masked_crc32c(header)))
         w(data)
-        w(struct.pack('I', masked_crc32(data)))
+        w(struct.pack('I', masked_crc32c(data)))
         self._writer.flush()  # FIXME
 
     def __del__(self):
@@ -106,8 +106,8 @@ class Logger(object):
 _time = 12.25
 
 
-def masked_crc32(data):
-    x = u32(zlib.crc32(data))
+def masked_crc32c(data):
+    x = u32(crc32c(data))
     return u32(((x >> 15) | u32(x << 17)) + 0xa282ead8)
 
 
