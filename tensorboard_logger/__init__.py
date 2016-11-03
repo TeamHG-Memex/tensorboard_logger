@@ -1,3 +1,3 @@
 # -*- coding: utf-8 -*-
 
-from tensorboard_logger.tensorboard_logger import *
+from .tensorboard_logger import *
