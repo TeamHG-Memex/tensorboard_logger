@@ -2,7 +2,9 @@
 from collections import defaultdict
 import os
 import re
+import struct
 import time
+import zlib
 
 import six
 from .tf_protobuf import summary_pb2, event_pb2
@@ -32,6 +34,8 @@ class Logger(object):
                 self.logdir,
                 'events.out.tfevents.{}.ws'.format(int(time.time())))
             self._writer = open(filename, 'wb')
+            self._write_event(event_pb2.Event(
+                wall_time=_time, step=0, file_version='brain.Event:2'))
 
     def log_value(self, name, value, step=None):
         """ Log new value for given name on given step.
@@ -73,10 +77,9 @@ class Logger(object):
         return tf_name
 
     def _log_value(self, tf_name, value, step=None):
-        summary = summary_pb2.Summary(value=[
-            summary_pb2.Summary.Value(node_name=tf_name, simple_value=value)
-            ])
-        event = event_pb2.Event(wall_time=time.time(), summary=summary)
+        summary = summary_pb2.Summary()
+        summary.value.add(tag=tf_name, simple_value=value)
+        event = event_pb2.Event(wall_time=_time, summary=summary)
         if step is not None:
             event.step = int(step)
         if self.is_dummy:
@@ -85,12 +88,31 @@ class Logger(object):
             self._write_event(event)
 
     def _write_event(self, event):
-        self._writer.write(event.SerializeToString())
+        data = event.SerializeToString()
+        # See RecordWriter::WriteRecord from record_writer.cc
+        w = self._writer.write
+        header = struct.pack('Q', len(data))
+        w(header)
+        w(struct.pack('I', masked_crc32(header)))
+        w(data)
+        w(struct.pack('I', masked_crc32(data)))
         self._writer.flush()  # FIXME
 
     def __del__(self):
         if self._writer is not None:
             self._writer.close()
+
+
+_time = 12.25
+
+
+def masked_crc32(data):
+    x = u32(zlib.crc32(data))
+    return u32(((x >> 15) | u32(x << 17)) + 0xa282ead8)
+
+
+def u32(x):
+    return x & 0xffffffff
 
 
 def make_valid_tf_name(name):
