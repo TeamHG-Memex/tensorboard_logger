@@ -9,8 +9,8 @@ tensorboard_logger
         :target: https://travis-ci.org/TeamHG-Memex/tensorboard_logger
 
 
-Log TensorBoard events without touching TensorFlow
---------------------------------------------------
+Log TensorBoard events without TensorFlow
+-----------------------------------------
 
 `TensorBoard <https://www.tensorflow.org/how_tos/summaries_and_tensorboard/>`_
 is a visualization tool (not this project, it's a part of
@@ -20,7 +20,7 @@ different runs, and has lots of other cool features.
 
 .. image:: tensorboard_example.png
 
-``tensorboard_logger`` library allows to write TensorBoard events without touching TensorFlow::
+``tensorboard_logger`` library allows to write TensorBoard events without TensorFlow::
 
     from tensorboard_logger import configure, log_value
 
@@ -35,21 +35,18 @@ different runs, and has lots of other cool features.
 Note: if you are already using TensorFlow in your project,
 you probably don't need this library.
 
-**Warning:** this is pre-alpha software, some stuff might work but it's not tested much yet.
-
 
 Installation
 ------------
 
-You need to `install <https://www.tensorflow.org/get_started/os_setup.html#download-and-setup>`_
-TensorFlow first: it is required both for writing events and for viewing them
-with TensorBoard. You probably want a CPU-only version.
-After that, install ``tensorboard_logger`` with pip::
+TensorFlow is required only for viewing logged events: please check installation guide
+on the `official site <https://www.tensorflow.org/get_started/os_setup.html#download-and-setup>`_
+(you probably want a CPU-only version).
+
+``tensorboard_logger`` can be installed with pip::
 
     pip install tensorboard_logger
 
-There is a plan to get rid of TensorFlow runtime dependency:
-https://github.com/TeamHG-Memex/tensorboard_logger/issues/1
 
 Usage
 -----
@@ -91,10 +88,8 @@ And go check the metrics to TensorBoard UI at http://localhost:6006
 Metrics are refreshed on switch to browser tab, and there is also a refresh button
 at the top right.
 
-Runtime overhead is large compared to what you would expect from normal logging,
-so you might need to throttle it: a single ``log_value`` call takes about 0.5 ms
-(or 0.0005 s, or 2000 operations/second).
-This might get solved in https://github.com/TeamHG-Memex/tensorboard_logger/issues/1.
+Runtime overhead rather large, about 0.1 - 0.2 ms for a single value logged
+(so about 5,000 - 10,000 operations per second).
 
 
 API
@@ -103,8 +98,9 @@ API
 ``tensorboard_logger.configure(logdir, flush_secs=2)``
 
 Configure logging: a file will be written to ``logdir``, and flushed every ``flush_secs``.
+**NOTE:** right now file is flushed after each event written.
 
-``tensorboard_logger.log_value(name, value, step)``
+``tensorboard_logger.log_value(name, value, step=None)``
 
 Log new ``value`` for given ``name`` on given ``step``.
 ``value`` should be a real number (it will be converted to float),
@@ -113,6 +109,7 @@ TensorFlow summary name). ``step`` should be an non-negative integer,
 and is used for visualization: you can log several different
 variables on one step, but should not log different values
 of the same variable on the same step (this is not checked).
+You can also omit step entirely.
 
 ``tensorboard_logger.Logger``
 

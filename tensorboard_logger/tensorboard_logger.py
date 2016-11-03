@@ -7,6 +7,7 @@ import struct
 import time
 
 import six
+
 from .tf_protobuf import summary_pb2, event_pb2
 from .crc32c import crc32c
 
@@ -99,7 +100,7 @@ class Logger(object):
         w(struct.pack('I', masked_crc32c(header)))
         w(data)
         w(struct.pack('I', masked_crc32c(data)))
-        self._writer.flush()  # FIXME
+        self._writer.flush()
 
     def _time(self):
         return self._dummy_time or time.time()
@@ -138,12 +139,12 @@ def configure(logdir, flush_secs=2):
     _default_logger = Logger(logdir, flush_secs=flush_secs)
 
 
-def log_value(name, value, step):
+def log_value(name, value, step=None):
     if _default_logger is None:
         raise ValueError(
             'default logger is not configured. '
             'Call tensorboard_logger.configure(logdir), '
             'or use tensorboard_logger.Logger')
-    _default_logger.log_value(name, value, step)
+    _default_logger.log_value(name, value, step=step)
 
 log_value.__doc__ = Logger.log_value.__doc__
