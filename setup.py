@@ -12,7 +12,6 @@ with open('HISTORY.rst') as history_file:
 requirements = [
     'numpy',
     'six',
-    'tensorflow',
 ]
 
 test_requirements = [
@@ -22,7 +21,7 @@ test_requirements = [
 setup(
     name='tensorboard_logger',
     version='0.0.1',
-    description='Log TensorBoard events without touching Tensorflow',
+    description='Log TensorBoard events without Tensorflow',
     long_description=readme + '\n\n' + history,
     author='Konstantin Lopuhin',
     author_email='kostia.lopuhin@gmail.com',

@@ -2,6 +2,7 @@
 from collections import defaultdict
 import os
 import re
+import socket
 import struct
 import time
 
@@ -18,24 +19,26 @@ _VALID_OP_NAME_PART = re.compile('[A-Za-z0-9_.\\-/]+')
 
 
 class Logger(object):
-    def __init__(self, logdir, flush_secs=2, is_dummy=False):
+    def __init__(self, logdir, flush_secs=2, is_dummy=False, dummy_time=None):
         self._name_to_tf_name = {}
         self._tf_names = set()
         self.is_dummy = is_dummy
         self.logdir = logdir
         self.flush_secs = flush_secs  # TODO
         self._writer = None
+        self._dummy_time = dummy_time
         if is_dummy:
             self.dummy_log = defaultdict(list)
         else:
             if not os.path.exists(self.logdir):
                 os.makedirs(self.logdir)
+            hostname = socket.gethostname()
             filename = os.path.join(
-                self.logdir,
-                'events.out.tfevents.{}.ws'.format(int(time.time())))
+                self.logdir, 'events.out.tfevents.{}.{}'.format(
+                    int(self._time()), hostname))
             self._writer = open(filename, 'wb')
             self._write_event(event_pb2.Event(
-                wall_time=_time, step=0, file_version='brain.Event:2'))
+                wall_time=self._time(), step=0, file_version='brain.Event:2'))
 
     def log_value(self, name, value, step=None):
         """ Log new value for given name on given step.
@@ -79,7 +82,7 @@ class Logger(object):
     def _log_value(self, tf_name, value, step=None):
         summary = summary_pb2.Summary()
         summary.value.add(tag=tf_name, simple_value=value)
-        event = event_pb2.Event(wall_time=_time, summary=summary)
+        event = event_pb2.Event(wall_time=self._time(), summary=summary)
         if step is not None:
             event.step = int(step)
         if self.is_dummy:
@@ -98,12 +101,12 @@ class Logger(object):
         w(struct.pack('I', masked_crc32c(data)))
         self._writer.flush()  # FIXME
 
+    def _time(self):
+        return self._dummy_time or time.time()
+
     def __del__(self):
         if self._writer is not None:
             self._writer.close()
-
-
-_time = 12.25
 
 
 def masked_crc32c(data):
