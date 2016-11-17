@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
@@ -20,15 +20,13 @@ test_requirements = [
 
 setup(
     name='tensorboard_logger',
-    version='0.0.2',
+    version='0.0.3',
     description='Log TensorBoard events without Tensorflow',
     long_description=readme + '\n\n' + history,
     author='Konstantin Lopuhin',
     author_email='kostia.lopuhin@gmail.com',
     url='https://github.com/TeamHG-Memex/tensorboard_logger',
-    packages=[
-        'tensorboard_logger',
-    ],
+    packages=find_packages(exclude=['docs', 'tests']),
     include_package_data=True,
     install_requires=requirements,
     license='MIT license',
