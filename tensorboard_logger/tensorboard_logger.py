@@ -12,7 +12,7 @@ from .tf_protobuf import summary_pb2, event_pb2
 from .crc32c import crc32c
 
 
-__all__ = ['Logger', 'configure', 'log_value']
+__all__ = ['Logger', 'configure', 'log_value', 'log_summary']
 
 
 _VALID_OP_NAME_START = re.compile('^[A-Za-z0-9.]')
@@ -70,6 +70,36 @@ class Logger(object):
             self._name_to_tf_name[name] = tf_name
 
         self._log_value(tf_name, value, step)
+    
+    def log_summary(self, name, value, step=None):
+        """ Log new value for given name on given step.
+        value should be a real number (it will be converted to float),
+        and name should be a string (it will be converted to a valid
+        tensorflow summary name). Step should be an non-negative integer,
+        and is used for visualization: you can log several different
+        variables on one step, but should not log different values
+        of the same variable on the same step (this is not checked).
+        """
+        if not isinstance(name, six.string_types):
+            raise TypeError('"name" should be a string, got {}'
+                            .format(type(name)))
+
+        if isinstance(value, six.string_types):
+            raise TypeError('"value" should be a number, got {}'
+                            .format(type(value)))
+        # value = float(value)
+
+        if step is not None and not isinstance(step, six.integer_types):
+            raise TypeError('"step" should be an integer, got {}'
+                            .format(type(step)))
+
+        try:
+            tf_name = self._name_to_tf_name[name]
+        except KeyError:
+            tf_name = self._make_tf_name(name)
+            self._name_to_tf_name[name] = tf_name
+
+        self._log_summary(tf_name, value, step)
 
     def _make_tf_name(self, name):
         tf_base_name = tf_name = make_valid_tf_name(name)
@@ -79,6 +109,16 @@ class Logger(object):
             i += 1
         self._tf_names.add(tf_name)
         return tf_name
+
+    def _log_summary(self, tf_name, value, step=None):
+        event = event_pb2.Event(wall_time=self._time(), summary=value)
+        if step is not None:
+            event.step = int(step)
+        if self.is_dummy:
+            self.dummy_log[tf_name].append((step, value))
+        else:
+            self._write_event(event)
+
 
     def _log_value(self, tf_name, value, step=None):
         summary = summary_pb2.Summary()
@@ -137,7 +177,16 @@ def configure(logdir, flush_secs=2):
     if _default_logger is not None:
         raise ValueError('default logger already configured')
     _default_logger = Logger(logdir, flush_secs=flush_secs)
+    return _default_logger
 
+
+def log_summary(name, value, step=None):
+    if _default_logger is None:
+        raise ValueError(
+            'default logger is not configured. '
+            'Call tensorboard_logger.configure(logdir), '
+            'or use tensorboard_logger.Logger')
+    _default_logger.log_summary(name, value, step=step)
 
 def log_value(name, value, step=None):
     if _default_logger is None:
@@ -148,3 +197,4 @@ def log_value(name, value, step=None):
     _default_logger.log_value(name, value, step=step)
 
 log_value.__doc__ = Logger.log_value.__doc__
+log_summary.__doc__ = Logger.log_summary.__doc__
