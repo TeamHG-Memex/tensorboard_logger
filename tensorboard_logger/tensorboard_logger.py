@@ -8,7 +8,11 @@ import time
 
 import six
 
-from .tf_protobuf import summary_pb2, event_pb2
+try:
+    from tensorflow.core.util import event_pb2
+    from tensorflow.core.framework import summary_pb2
+except ImportError:
+    from .tf_protobuf import summary_pb2, event_pb2
 from .crc32c import crc32c
 
 
