@@ -134,6 +134,7 @@ Compiling python protobuf files::
 License
 -------
 
-MIT license
+`MIT license`_
 
+.. _MIT license: LICENSE
 
