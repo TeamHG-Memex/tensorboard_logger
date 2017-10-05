@@ -61,7 +61,7 @@ class Logger(object):
         if isinstance(value, six.string_types):
             raise TypeError('"value" should be a number, got {}'
                             .format(type(value)))
-        value = float(value)
+        # value = float(value)
 
         if step is not None and not isinstance(step, six.integer_types):
             raise TypeError('"step" should be an integer, got {}'
@@ -86,7 +86,10 @@ class Logger(object):
 
     def _log_value(self, tf_name, value, step=None):
         summary = summary_pb2.Summary()
-        summary.value.add(tag=tf_name, simple_value=value)
+        if type(value) is summary_pb2.Summary.Image:
+            summary.value.add(tag=tf_name, image=value)
+        else:
+            summary.value.add(tag=tf_name, simple_value=float(value))
         event = event_pb2.Event(wall_time=self._time(), summary=summary)
         if step is not None:
             event.step = int(step)
@@ -132,7 +135,6 @@ def make_valid_tf_name(name):
 
 _default_logger = None  # type: Logger
 
-
 def configure(logdir, flush_secs=2):
     """ Configure logging: a file will be written to logdir, and flushed
     every flush_secs.
@@ -141,7 +143,6 @@ def configure(logdir, flush_secs=2):
     if _default_logger is not None:
         raise ValueError('default logger already configured')
     _default_logger = Logger(logdir, flush_secs=flush_secs)
-
 
 def log_value(name, value, step=None):
     if _default_logger is None:
