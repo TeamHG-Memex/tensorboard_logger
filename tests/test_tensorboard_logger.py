@@ -2,6 +2,7 @@
 import time
 import os
 import glob
+import numpy as np
 
 from tensorboard_logger import Logger, configure, log_value
 from tensorboard_logger.tensorboard_logger import make_valid_tf_name
@@ -117,12 +118,11 @@ def test_real_histo_data(tmpdir):
 
 def test_dummy_images():
     logger = Logger(None, is_dummy=True)
-    import numpy as np
     img = np.random.rand(10, 10)
     images = [img, img]
-    logger.log_histogram('key', images, step=1)
-    logger.log_histogram('key', images, step=2)
-    logger.log_histogram('key', images, step=3)
+    logger.log_images('key', images, step=1)
+    logger.log_images('key', images, step=2)
+    logger.log_images('key', images, step=3)
 
     assert dict(logger.dummy_log) == {
         'key': [(1, images),
@@ -132,11 +132,10 @@ def test_dummy_images():
 
 def test_real_image_data(tmpdir):
     logger = Logger(str(tmpdir), flush_secs=0.1)
-    import numpy as np
     img = np.random.rand(10, 10)
     images = [img, img]
-    logger.log_histogram('key', images, step=1)
-    logger.log_histogram('key', images, step=2)
-    logger.log_histogram('key', images, step=3)
+    logger.log_images('key', images, step=1)
+    logger.log_images('key', images, step=2)
+    logger.log_images('key', images, step=3)
     tf_log, = glob.glob(str(tmpdir) + '/*')
     assert os.path.basename(tf_log).startswith('events.out.tfevents.')

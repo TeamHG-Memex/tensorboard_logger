@@ -106,7 +106,7 @@ class Logger(object):
         summary = self._histogram_summary(tf_name, value, step=step)
         self._log_summary(tf_name, summary, value, step=step)
 
-    def log_image(self, name, images, step=None):
+    def log_images(self, name, images, step=None):
         """Log new images for given name on given step.
 
         Args:
