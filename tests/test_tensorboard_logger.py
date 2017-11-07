@@ -92,8 +92,6 @@ def test_dummy_histo():
 
 def test_real_histo_tuple(tmpdir):
     """
-    import sys
-    sys.path.append('/home/joncrall/code/tensorboard_logger/tests')
     from tests.test_tensorboard_logger import *
     import ubelt as ub
     ub.delete(ub.ensure_app_cache_dir('tf_logger'))
