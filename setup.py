@@ -13,6 +13,7 @@ requirements = [
     'protobuf',
     'six',
     'numpy',
+    'scipy',
 ]
 
 test_requirements = [

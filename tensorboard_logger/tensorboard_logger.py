@@ -5,8 +5,15 @@ import re
 import socket
 import struct
 import time
+import numpy as np
 
 import six
+
+import scipy.misc
+try:
+    from StringIO import StringIO  # Python 2.7
+except ImportError:
+    from io import BytesIO         # Python 3.x
 
 try:
     from tensorflow.core.util import event_pb2
@@ -67,8 +74,7 @@ class Logger(object):
         Args:
             name (str): name of the variable (it will be converted to a valid
                 tensorflow summary name).
-            value (float or list): this is a real number to be logged
-                as a scalar.
+            value (float): this is a real number to be logged as a scalar.
             step (int): non-negative integer used for visualization: you can
                 log several different variables on one step, but should not log
                 different values of the same variable on the same step (this is
@@ -133,7 +139,6 @@ class Logger(object):
             https://github.com/yunjey/pytorch-tutorial/blob/master/tutorials/04-utils/tensorboard/logger.py#L22
 
         Example:
-            >>> import numpy as np
             >>> tf_name = 'foo'
             >>> value = ([0, 1, 2, 3, 4, 5], [1, 20, 10, 22, 11])
             >>> self = Logger(None, is_dummy=True)
@@ -142,12 +147,6 @@ class Logger(object):
             >>> assert len(summary.value) == 2
             >>> assert summary.value[0].image.width == 10
         """
-        import scipy.misc
-        try:
-            from StringIO import StringIO  # Python 2.7
-        except ImportError:
-            from io import BytesIO         # Python 3.x
-
         img_summaries = []
         for i, img in enumerate(images):
             # Write the image to a string
@@ -176,9 +175,9 @@ class Logger(object):
     def _histogram_summary(self, tf_name, value, step=None):
         """
         Args:
-            tf_name : name of tensorflow variable
-            value : either a tuple of bin_edges and bincounts or a list of
-                values to summarize in a histogram.
+            tf_name (str): name of tensorflow variable
+            value (tuple or list): either a tuple of bin_edges and bincounts or
+                a list of values to summarize in a histogram.
 
         References:
             https://github.com/yunjey/pytorch-tutorial/blob/master/tutorials/04-utils/tensorboard/logger.py#L45
@@ -205,7 +204,6 @@ class Logger(object):
             hist.min = float(min(bin_edges))
             hist.max = float(max(bin_edges))
         else:
-            import numpy as np
             values = np.array(value)
 
             bincounts, bin_edges = np.histogram(values)
