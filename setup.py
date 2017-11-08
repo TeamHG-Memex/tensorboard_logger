@@ -13,7 +13,8 @@ requirements = [
     'protobuf',
     'six',
     'numpy',
-    'scipy',
+    'scipy >= 0.19.1',
+    'pillow >= 4.1.1',
 ]
 
 test_requirements = [
