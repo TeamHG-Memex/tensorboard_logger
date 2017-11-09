@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 import time
+import os
+import glob
+import numpy as np
 
 from tensorboard_logger import Logger, configure, log_value
 from tensorboard_logger.tensorboard_logger import make_valid_tf_name
@@ -73,3 +76,66 @@ def test_unique():
         'A_v/1/1': [(1, 2), (2, 4)],
         'A_v/1/2': [(1, 3), (2, 6)],
     }
+
+
+def test_dummy_histo():
+    logger = Logger(None, is_dummy=True)
+    bins = [0, 1, 2, 3]
+    logger.log_histogram('key', (bins, [0.0, 1.0, 2.0]), step=1)
+    logger.log_histogram('key', (bins, [1.0, 1.5, 2.5]), step=2)
+    logger.log_histogram('key', (bins, [0.0, 1.0, 2.0]), step=3)
+
+    assert dict(logger.dummy_log) == {
+        'key': [(1, (bins, [0.0, 1.0, 2.0])),
+                (2, (bins, [1.0, 1.5, 2.5])),
+                (3, (bins, [0.0, 1.0, 2.0]))]}
+
+
+def test_real_histo_tuple(tmpdir):
+    """
+    from tests.test_tensorboard_logger import *
+    import ubelt as ub
+    ub.delete(ub.ensure_app_cache_dir('tf_logger'))
+    tmpdir = ub.ensure_app_cache_dir('tf_logger/runs/run1')
+    """
+    logger = Logger(str(tmpdir), flush_secs=0.1)
+    bins = [-.5, .5, 1.5, 2.5]
+    logger.log_histogram('hist1', (bins, [0.0, 1.0, 2.0]), step=1)
+    logger.log_histogram('hist1', (bins, [1.0, 1.5, 2.5]), step=2)
+    logger.log_histogram('hist1', (bins, [0.0, 1.0, 2.0]), step=3)
+    tf_log, = glob.glob(str(tmpdir) + '/*')
+    assert os.path.basename(tf_log).startswith('events.out.tfevents.')
+
+
+def test_real_histo_data(tmpdir):
+    logger = Logger(str(tmpdir), flush_secs=0.1)
+    logger.log_histogram('hist2', [1, 7, 6, 9, 8, 1, 4, 5, 3, 7], step=1)
+    logger.log_histogram('hist2', [5, 3, 2, 0, 8, 5, 7, 7, 7, 2], step=2)
+    logger.log_histogram('hist2', [1, 2, 2, 1, 5, 1, 8, 4, 4, 1], step=3)
+    tf_log, = glob.glob(str(tmpdir) + '/*')
+    assert os.path.basename(tf_log).startswith('events.out.tfevents.')
+
+
+def test_dummy_images():
+    logger = Logger(None, is_dummy=True)
+    img = np.random.rand(10, 10)
+    images = [img, img]
+    logger.log_images('key', images, step=1)
+    logger.log_images('key', images, step=2)
+    logger.log_images('key', images, step=3)
+
+    assert dict(logger.dummy_log) == {
+        'key': [(1, images),
+                (2, images),
+                (3, images)]}
+
+
+def test_real_image_data(tmpdir):
+    logger = Logger(str(tmpdir), flush_secs=0.1)
+    img = np.random.rand(10, 10)
+    images = [img, img]
+    logger.log_images('key', images, step=1)
+    logger.log_images('key', images, step=2)
+    logger.log_images('key', images, step=3)
+    tf_log, = glob.glob(str(tmpdir) + '/*')
+    assert os.path.basename(tf_log).startswith('events.out.tfevents.')

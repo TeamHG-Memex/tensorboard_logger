@@ -5,8 +5,15 @@ import re
 import socket
 import struct
 import time
+import numpy as np
 
 import six
+
+import scipy.misc
+try:
+    from StringIO import StringIO  # Python 2.7
+except ImportError:
+    from io import BytesIO         # Python 3.x
 
 try:
     from tensorflow.core.util import event_pb2
@@ -16,7 +23,7 @@ except ImportError:
 from .crc32c import crc32c
 
 
-__all__ = ['Logger', 'configure', 'log_value']
+__all__ = ['Logger', 'configure', 'log_value', 'log_histogram', 'log_images']
 
 
 _VALID_OP_NAME_START = re.compile('^[A-Za-z0-9.]')
@@ -45,35 +52,183 @@ class Logger(object):
             self._write_event(event_pb2.Event(
                 wall_time=self._time(), step=0, file_version='brain.Event:2'))
 
-    def log_value(self, name, value, step=None):
-        """ Log new value for given name on given step.
-        value should be a real number (it will be converted to float),
-        and name should be a string (it will be converted to a valid
-        tensorflow summary name). Step should be an non-negative integer,
-        and is used for visualization: you can log several different
-        variables on one step, but should not log different values
-        of the same variable on the same step (this is not checked).
-        """
+    def _ensure_tf_name(self, name):
         if not isinstance(name, six.string_types):
             raise TypeError('"name" should be a string, got {}'
                             .format(type(name)))
-
-        if isinstance(value, six.string_types):
-            raise TypeError('"value" should be a number, got {}'
-                            .format(type(value)))
-        value = float(value)
-
-        if step is not None and not isinstance(step, six.integer_types):
-            raise TypeError('"step" should be an integer, got {}'
-                            .format(type(step)))
-
         try:
             tf_name = self._name_to_tf_name[name]
         except KeyError:
             tf_name = self._make_tf_name(name)
             self._name_to_tf_name[name] = tf_name
+        return tf_name
 
-        self._log_value(tf_name, value, step)
+    def _check_step(self, step):
+        if step is not None and not isinstance(step, six.integer_types):
+            raise TypeError('"step" should be an integer, got {}'
+                            .format(type(step)))
+
+    def log_value(self, name, value, step=None):
+        """Log new value for given name on given step.
+
+        Args:
+            name (str): name of the variable (it will be converted to a valid
+                tensorflow summary name).
+            value (float): this is a real number to be logged as a scalar.
+            step (int): non-negative integer used for visualization: you can
+                log several different variables on one step, but should not log
+                different values of the same variable on the same step (this is
+                not checked).
+        """
+        if isinstance(value, six.string_types):
+            raise TypeError('"value" should be a number, got {}'
+                            .format(type(value)))
+        value = float(value)
+
+        self._check_step(step)
+        tf_name = self._ensure_tf_name(name)
+
+        summary = self._scalar_summary(tf_name, value, step)
+        self._log_summary(tf_name, summary, value, step=step)
+
+    def log_histogram(self, name, value, step=None):
+        """Log a histogram for given name on given step.
+
+        Args:
+            name (str): name of the variable (it will be converted to a valid
+                tensorflow summary name).
+            value (tuple or list): either list of numbers
+                to be summarized as a histogram, or a tuple of bin_edges and
+                bincounts that directly define a histogram.
+            step (int): non-negative integer used for visualization
+        """
+        if isinstance(value, six.string_types):
+            raise TypeError('"value" should be a number, got {}'
+                            .format(type(value)))
+
+        self._check_step(step)
+        tf_name = self._ensure_tf_name(name)
+
+        summary = self._histogram_summary(tf_name, value, step=step)
+        self._log_summary(tf_name, summary, value, step=step)
+
+    def log_images(self, name, images, step=None):
+        """Log new images for given name on given step.
+
+        Args:
+            name (str): name of the variable (it will be converted to a valid
+                tensorflow summary name).
+            images (list): list of images to visualize
+            step (int): non-negative integer used for visualization
+        """
+        if isinstance(images, six.string_types):
+            raise TypeError('"images" should be a list of ndarrays, got {}'
+                            .format(type(images)))
+
+        self._check_step(step)
+        tf_name = self._ensure_tf_name(name)
+
+        summary = self._image_summary(tf_name, images, step=step)
+        self._log_summary(tf_name, summary, images, step=step)
+
+    def _image_summary(self, tf_name, images, step=None):
+        """
+        Log a list of images.
+
+        References:
+            https://github.com/yunjey/pytorch-tutorial/blob/master/tutorials/04-utils/tensorboard/logger.py#L22
+
+        Example:
+            >>> tf_name = 'foo'
+            >>> value = ([0, 1, 2, 3, 4, 5], [1, 20, 10, 22, 11])
+            >>> self = Logger(None, is_dummy=True)
+            >>> images = [np.random.rand(10, 10), np.random.rand(10, 10)]
+            >>> summary = self._image_summary(tf_name, images, step=None)
+            >>> assert len(summary.value) == 2
+            >>> assert summary.value[0].image.width == 10
+        """
+        img_summaries = []
+        for i, img in enumerate(images):
+            # Write the image to a string
+            try:
+                s = StringIO()
+            except:
+                s = BytesIO()
+            scipy.misc.toimage(img).save(s, format="png")
+
+            # Create an Image object
+            img_sum = summary_pb2.Summary.Image(
+                encoded_image_string=s.getvalue(),
+                height=img.shape[0],
+                width=img.shape[1]
+            )
+            # Create a Summary value
+            img_value = summary_pb2.Summary.Value(tag='{}/{}'.format(tf_name, i),
+                                                  image=img_sum)
+            img_summaries.append(img_value)
+            summary = summary_pb2.Summary()
+            summary.value.add(tag=tf_name, image=img_sum)
+
+        summary = summary_pb2.Summary(value=img_summaries)
+        return summary
+
+    def _histogram_summary(self, tf_name, value, step=None):
+        """
+        Args:
+            tf_name (str): name of tensorflow variable
+            value (tuple or list): either a tuple of bin_edges and bincounts or
+                a list of values to summarize in a histogram.
+
+        References:
+            https://github.com/yunjey/pytorch-tutorial/blob/master/tutorials/04-utils/tensorboard/logger.py#L45
+
+        Example:
+            >>> tf_name = 'foo'
+            >>> value = ([0, 1, 2, 3, 4, 5], [1, 20, 10, 22, 11])
+            >>> self = Logger(None, is_dummy=True)
+            >>> summary = self._histogram_summary(tf_name, value, step=None)
+            >>> assert summary.value[0].histo.max == 5
+
+        Example:
+            >>> tf_name = 'foo'
+            >>> value = [0.72,  0.18,  0.34,  0.66,  0.11,  0.70,  0.23]
+            >>> self = Logger(None, is_dummy=True)
+            >>> summary = self._histogram_summary(tf_name, value, step=None)
+            >>> assert summary.value[0].histo.num == 7.0
+        """
+        if isinstance(value, tuple):
+            bin_edges, bincounts = value
+            assert len(bin_edges) == len(bincounts) + 1, (
+                'must have one more edge than count')
+            hist = summary_pb2.HistogramProto()
+            hist.min = float(min(bin_edges))
+            hist.max = float(max(bin_edges))
+        else:
+            values = np.array(value)
+
+            bincounts, bin_edges = np.histogram(values)
+
+            hist = summary_pb2.HistogramProto()
+            hist.min = float(np.min(values))
+            hist.max = float(np.max(values))
+            hist.num = int(np.prod(values.shape))
+            hist.sum = float(np.sum(values))
+            hist.sum_squares = float(np.sum(values**2))
+
+        # Add bin edges and counts
+        for edge in bin_edges[1:]:
+            hist.bucket_limit.append(edge)
+        for v in bincounts:
+            hist.bucket.append(v)
+
+        summary = summary_pb2.Summary()
+        summary.value.add(tag=tf_name, histo=hist)
+        return summary
+
+    def _scalar_summary(self, tf_name, value, step=None):
+        summary = summary_pb2.Summary()
+        summary.value.add(tag=tf_name, simple_value=value)
+        return summary
 
     def _make_tf_name(self, name):
         tf_base_name = tf_name = make_valid_tf_name(name)
@@ -84,9 +239,7 @@ class Logger(object):
         self._tf_names.add(tf_name)
         return tf_name
 
-    def _log_value(self, tf_name, value, step=None):
-        summary = summary_pb2.Summary()
-        summary.value.add(tag=tf_name, simple_value=value)
+    def _log_summary(self, tf_name, summary, value, step=None):
         event = event_pb2.Event(wall_time=self._time(), summary=summary)
         if step is not None:
             event.step = int(step)
@@ -143,12 +296,26 @@ def configure(logdir, flush_secs=2):
     _default_logger = Logger(logdir, flush_secs=flush_secs)
 
 
-def log_value(name, value, step=None):
+def _check_default_logger():
     if _default_logger is None:
         raise ValueError(
             'default logger is not configured. '
             'Call tensorboard_logger.configure(logdir), '
             'or use tensorboard_logger.Logger')
+
+
+def log_value(name, value, step=None):
+    _check_default_logger()
     _default_logger.log_value(name, value, step=step)
+
+
+def log_histogram(name, value, step=None):
+    _check_default_logger()
+    _default_logger.log_histogram(name, value, step=step)
+
+
+def log_images(name, images, step=None):
+    _check_default_logger()
+    _default_logger.log_images(name, images, step=step)
 
 log_value.__doc__ = Logger.log_value.__doc__

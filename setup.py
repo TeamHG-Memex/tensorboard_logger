@@ -12,6 +12,9 @@ with open('HISTORY.rst') as history_file:
 requirements = [
     'protobuf',
     'six',
+    'numpy',
+    'scipy >= 0.19.1',
+    'pillow >= 4.1.1',
 ]
 
 test_requirements = [
