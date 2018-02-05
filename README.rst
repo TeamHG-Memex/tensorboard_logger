@@ -138,3 +138,8 @@ License
 
 .. _MIT license: LICENSE
 
+----
+
+.. image:: https://hyperiongray.s3.amazonaws.com/define-hg.svg
+	:target: https://hyperiongray.com/?pk_campaign=github&pk_kwd=tensorboard_logger
+	:alt: define hyperiongray
