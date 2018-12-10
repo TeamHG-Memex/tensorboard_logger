@@ -23,7 +23,7 @@ except ImportError:
 from .crc32c import crc32c
 
 
-__all__ = ['Logger', 'configure', 'log_value', 'log_histogram', 'log_images']
+__all__ = ['Logger', 'configure', 'unconfigure', 'log_value', 'log_histogram', 'log_images']
 
 
 _VALID_OP_NAME_START = re.compile('^[A-Za-z0-9.]')
@@ -295,6 +295,11 @@ def configure(logdir, flush_secs=2):
         raise ValueError('default logger already configured')
     _default_logger = Logger(logdir, flush_secs=flush_secs)
 
+def unconfigure():
+    """ UnConfigure logging
+    """
+    global _default_logger
+    _default_logger = None  # type: Logger
 
 def _check_default_logger():
     if _default_logger is None:

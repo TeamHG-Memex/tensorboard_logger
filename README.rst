@@ -111,6 +111,11 @@ variables on one step, but should not log different values
 of the same variable on the same step (this is not checked).
 You can also omit step entirely.
 
+``tensorboard_logger.unconfigure()``
+
+Simply unconfigure the logger setting the global variable ``_default_logger``
+to ``None``.
+
 ``tensorboard_logger.Logger``
 
 A class for writing logs in a directory.
