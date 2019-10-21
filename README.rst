@@ -8,6 +8,8 @@ tensorboard_logger
 .. image:: https://img.shields.io/travis/TeamHG-Memex/tensorboard_logger.svg
         :target: https://travis-ci.org/TeamHG-Memex/tensorboard_logger
 
+Note: consider using https://pytorch.org/docs/stable/tensorboard.html instead which
+has the same goal and is part of pytorch.
 
 Log TensorBoard events without TensorFlow
 -----------------------------------------
