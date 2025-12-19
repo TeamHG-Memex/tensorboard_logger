@@ -26,7 +26,7 @@
         "NO DEMO CODE mixed with production",
         "NO CALCULATION BASED EMULATIONS",
         "Demo code should be clearly marked and put in a demo/ directory",
-        "Document and be well organized"
+        "Document and be well organized. In a docs/ directory with categories of subdirs please."
       ]
     },
     {
