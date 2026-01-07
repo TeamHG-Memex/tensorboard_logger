@@ -1,0 +1,6 @@
+./tensorboard_logger.py
+./tf_protobuf/event_pb2.py
+./tf_protobuf/__init__.py
+./tf_protobuf/summary_pb2.py
+./__init__.py
+./crc32c.py

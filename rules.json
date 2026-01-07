@@ -1,6 +1,12 @@
 {
     "rules": [
     {
+	    "id" : "07kwRDfGEGxIqlUsk3232" 
+	    "title: repo organization:",
+	    "category": "required before merge",
+	    "content" : "to_implement/  build/  include/  lib/  docs/  src/  bin/ <--- the binary or binaries i will use, called sane things  Makefile or build.sh or pf task file (something to build that builds all the work)  QUICKSTART.md  README.md  VERSION. Additional directories may be added in an ORGANIZED manner if they do not fit any of these categories. Subfolders should be equally as organized in a very similar way as well."
+    }
+    {
       "id": "07kwRDfGEGxIqlUskCf32",
       "title": "pf tool usage",
       "category": "tools",

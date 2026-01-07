@@ -1,0 +1,8 @@
+./setup.py
+./AGENTS.md
+./travis_pypi_setup.py
+./tests/test_tensorboard_logger.py
+./tests/__init__.py
+./tensorboard_logger/tensorboard_logger.py
+./tensorboard_logger/__init__.py
+./tensorboard_logger/crc32c.py
